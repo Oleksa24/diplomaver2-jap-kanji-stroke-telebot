@@ -19,7 +19,7 @@ async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 
-tg_app.add_handler(CommandHandler("start", start))
+tg_app.add_handler(CommandHandler("draw", draw))
 
 
 @app.before_serving
