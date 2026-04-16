@@ -12,8 +12,8 @@ WEB_APP_URL = f"{RENDER_URL}/pad?v=2"
 app = Quart(__name__)
 tg_app = Application.builder().token(BOT_TOKEN).build()
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [[KeyboardButton("Draw Kanji ✍️", web_app=WebAppInfo(url=WEB_APP_URL))]]
+async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [[KeyboardButton("Draw Kanji", web_app=WebAppInfo(url=WEB_APP_URL))]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text("Click the 'Draw Kanji' button on your keyboard below to open the pad:", reply_markup=reply_markup)
 
