@@ -92,13 +92,30 @@
         document.getElementById('recognizeBtn').addEventListener('click', () => {
             if (strokes.length === 0) return;
             
+            const btn = document.getElementById('recognizeBtn');
+            btn.innerText = "Recognizing...";
+            btn.disabled = true;
+
             const requestData = {
+                user_id: tg.initDataUnsafe?.user?.id, 
                 width: canvas.width,
                 height: canvas.height,
                 strokes: strokes
             };
             
-            tg.sendData(JSON.stringify(requestData)); 
+            fetch('/recognize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                tg.close(); // Close the app when done
+            })
+            .catch(error => {
+                alert("Error sending drawing. Try again!");
+                btn.innerText = "Recognize";
+                btn.disabled = false;
+            });
         });
     </script>
 </body>

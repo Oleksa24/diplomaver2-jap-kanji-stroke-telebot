@@ -17,10 +17,47 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text("Click the 'Draw Kanji' button on your keyboard below to open the pad:", reply_markup=reply_markup)
 
-async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    data_str = update.effective_message.web_app_data.data
+
+
+tg_app.add_handler(CommandHandler("start", start))
+
+
+@app.before_serving
+async def init_bot():
+    await tg_app.initialize()
+    await tg_app.start()
+
+@app.after_serving
+async def stop_bot():
+    await tg_app.stop()
+    await tg_app.shutdown()
+
+@app.route(f'/{BOT_TOKEN}', methods=['POST'])
+async def webhook():
+    # Quart requires awaiting the json body payload
+    req_json = await request.get_json(force=True)
+    update = Update.de_json(req_json, tg_app.bot)
+    await tg_app.process_update(update)
+    return "OK", 200
+
+@app.route('/pad', methods=['GET'])
+async def serve_pad():
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    return await send_file(os.path.join(basedir, 'kanji-pad.html'))
+
+@app.route('/', methods=['GET'])
+async def index():
+    return "Telegram Kanji Bot is running!", 200
+
+@app.route('/recognize', methods=['POST'])
+async def recognize_api():
+    data = await request.get_json(force=True)
+    user_id = data.get("user_id")
+
+    if not user_id:
+        return "Missing User ID", 400
+
     try:
-        data = json.loads(data_str)
         payload = {
             "app_version": 0.4,
             "api_level": "537.36",
@@ -45,47 +82,13 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             candidates = res_data[1][0][1]
             top_match = candidates[0]
             others = ", ".join(candidates[1:6])
-            # Use HTML tags <b> for bold and <i> for italic
-            reply_text = f"🎯 <b>Top Match:</b> {top_match}\n\n📝 <i>Other possibilities:</i> {others}"
+            reply_text = f"<b>Top Match:</b> {top_match}\n\n <i>Other possibilities:</i> {others}"
         else:
             reply_text = "Sorry, couldn't recognize that drawing."
             
     except Exception as e:
         reply_text = f"An error occurred: {e}"
 
-    # Change parse_mode from 'Markdown' to 'HTML'
-    await update.message.reply_text(reply_text, parse_mode='HTML')
+    await tg_app.bot.send_message(chat_id=user_id, text=reply_text, parse_mode='HTML')
 
-tg_app.add_handler(CommandHandler("start", start))
-tg_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
-
-# --- QUART SERVER LIFECYCLE & ROUTES ---
-
-@app.before_serving
-async def init_bot():
-    """Start the bot when the web server boots up."""
-    await tg_app.initialize()
-    await tg_app.start()
-
-@app.after_serving
-async def stop_bot():
-    """Gracefully shut down the bot when the server stops."""
-    await tg_app.stop()
-    await tg_app.shutdown()
-
-@app.route(f'/{BOT_TOKEN}', methods=['POST'])
-async def webhook():
-    # Quart requires awaiting the json body payload
-    req_json = await request.get_json(force=True)
-    update = Update.de_json(req_json, tg_app.bot)
-    await tg_app.process_update(update)
     return "OK", 200
-
-@app.route('/pad', methods=['GET'])
-async def serve_pad():
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    return await send_file(os.path.join(basedir, 'kanji-pad.html'))
-
-@app.route('/', methods=['GET'])
-async def index():
-    return "Telegram Kanji Bot is running!", 200
