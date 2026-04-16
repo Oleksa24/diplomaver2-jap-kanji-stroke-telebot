@@ -45,14 +45,16 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             candidates = res_data[1][0][1]
             top_match = candidates[0]
             others = ", ".join(candidates[1:6])
-            reply_text = f"🎯 **Top Match:** {top_match}\n\n📝 *Other possibilities:* {others}"
+            # Use HTML tags <b> for bold and <i> for italic
+            reply_text = f"🎯 <b>Top Match:</b> {top_match}\n\n📝 <i>Other possibilities:</i> {others}"
         else:
             reply_text = "Sorry, couldn't recognize that drawing."
             
     except Exception as e:
         reply_text = f"An error occurred: {e}"
 
-    await update.message.reply_text(reply_text, parse_mode='Markdown')
+    # Change parse_mode from 'Markdown' to 'HTML'
+    await update.message.reply_text(reply_text, parse_mode='HTML')
 
 tg_app.add_handler(CommandHandler("start", start))
 tg_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
