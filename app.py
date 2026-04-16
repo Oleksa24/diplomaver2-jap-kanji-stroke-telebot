@@ -5,6 +5,7 @@ import asyncio
 from flask import Flask, request, send_file
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 
 # Render provides RENDER_EXTERNAL_URL automatically (e.g., https://my-bot.onrender.com)
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
@@ -15,9 +16,13 @@ app = Flask(__name__)
 tg_app = Application.builder().token(BOT_TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [[InlineKeyboardButton("Draw Kanji ✍️", web_app=WebAppInfo(url=WEB_APP_URL))]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Click the button below to draw:", reply_markup=reply_markup)
+    # Use a KeyboardButton instead of an InlineKeyboardButton
+    keyboard = [[KeyboardButton("Draw Kanji ✍️", web_app=WebAppInfo(url=WEB_APP_URL))]]
+    
+    # Use ReplyKeyboardMarkup and set resize_keyboard=True so it doesn't take up the whole screen
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    
+    await update.message.reply_text("Click the 'Draw Kanji' button on your keyboard below to open the pad:", reply_markup=reply_markup)
 
 async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     data_str = update.effective_message.web_app_data.data
