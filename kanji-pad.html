@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); font-family: sans-serif; }
+        canvas { border: 2px solid #ccc; touch-action: none; background: white; margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #fff); border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Draw a Kanji</h2>
+    <canvas id="drawingCanvas" width="300" height="300"></canvas>
+    <button id="recognizeBtn">Recognize</button>
+    <button id="clearBtn" style="background-color: #ff4d4d; margin-top: 10px;">Clear</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+
+        let isDrawing = false;
+        let strokes = []; // Holds all strokes
+        let currentStrokeX = []; // X coordinates for the current stroke
+        let currentStrokeY = []; // Y coordinates for the current stroke
+
+        function getCoordinates(e) {
+            if (e.touches && e.touches.length > 0) {
+                const rect = canvas.getBoundingClientRect();
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: e.offsetX, y: e.offsetY };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const { x, y } = getCoordinates(e);
+            currentStrokeX = [x];
+            currentStrokeY = [y];
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const { x, y } = getCoordinates(e);
+            currentStrokeX.push(x); // Save X
+            currentStrokeY.push(y); // Save Y
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            e.preventDefault();
+        }
+
+        function stopDrawing() { 
+            if (isDrawing) {
+                // Google expects an array of time points as the 3rd element, we can leave it empty
+                strokes.push([currentStrokeX, currentStrokeY, []]);
+                isDrawing = false; 
+            }
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            strokes = []; // Reset strokes!
+        });
+
+        document.getElementById('recognizeBtn').addEventListener('click', () => {
+            if (strokes.length === 0) return;
+            
+            // Package the stroke data and canvas size into a JSON string
+            const requestData = {
+                width: canvas.width,
+                height: canvas.height,
+                strokes: strokes
+            };
+            
+            // Send to the Telegram Python Bot
+            tg.sendData(JSON.stringify(requestData)); 
+        });
+    </script>
+</body>
+</html>
