@@ -62,9 +62,16 @@ tg_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_
 
 # --- FLASK ROUTES ---
 @app.route(f'/{BOT_TOKEN}', methods=['POST'])
-def webhook():
+async def webhook():
+    # The Telegram application must be initialized before processing updates
+    if not tg_app.bot_data.get("is_initialized"):
+        await tg_app.initialize()
+        tg_app.bot_data["is_initialized"] = True
+        
+    # Get the data from Telegram and process it
     update = Update.de_json(request.get_json(force=True), tg_app.bot)
-    asyncio.run(tg_app.process_update(update))
+    await tg_app.process_update(update)
+    
     return "OK", 200
 
 @app.route('/pad', methods=['GET'])
