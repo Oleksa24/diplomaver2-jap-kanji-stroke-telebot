@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppI
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 BOT_TOKEN = "8469752876:AAHg9mN7D6DSMpOVQ4DZhY92-0pJOMeX5qM"
-WEB_APP_URL = "https://diplomaver2-jap-kanji-stroke-telebo.vercel.app/" # Your hosted HTML file
+WEB_APP_URL = "Oleksa24.pythonanywhere.com" 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
