@@ -1,4 +1,4 @@
-flask[async]
+quart
 python-telegram-bot
 requests
-gunicorn
+hypercorn
