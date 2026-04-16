@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-WEB_APP_URL = f"{RENDER_URL}/pad"
+WEB_APP_URL = f"{RENDER_URL}/pad?v=2"
 
 app = Quart(__name__)
 tg_app = Application.builder().token(BOT_TOKEN).build()
@@ -34,7 +34,6 @@ async def stop_bot():
 
 @app.route(f'/{BOT_TOKEN}', methods=['POST'])
 async def webhook():
-    # Quart requires awaiting the json body payload
     req_json = await request.get_json(force=True)
     update = Update.de_json(req_json, tg_app.bot)
     await tg_app.process_update(update)
