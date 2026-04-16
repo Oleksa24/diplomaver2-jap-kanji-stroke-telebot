@@ -32,11 +32,17 @@
         let currentStrokeY = []; // Y coordinates for the current stroke
 
         function getCoordinates(e) {
+            let curX, curY;
             if (e.touches && e.touches.length > 0) {
                 const rect = canvas.getBoundingClientRect();
-                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                curX = e.touches[0].clientX - rect.left;
+                curY = e.touches[0].clientY - rect.top;
+            } else {
+                curX = e.offsetX;
+                curY = e.offsetY;
             }
-            return { x: e.offsetX, y: e.offsetY };
+            // CRITICAL FIX: Round to integers to drastically reduce JSON string size
+            return { x: Math.round(curX), y: Math.round(curY) };
         }
 
         function startDrawing(e) {
@@ -52,10 +58,19 @@
         function draw(e) {
             if (!isDrawing) return;
             const { x, y } = getCoordinates(e);
-            currentStrokeX.push(x); // Save X
-            currentStrokeY.push(y); // Save Y
-            ctx.lineTo(x, y);
-            ctx.stroke();
+            
+            // Get the last recorded point
+            const lastX = currentStrokeX[currentStrokeX.length - 1];
+            const lastY = currentStrokeY[currentStrokeY.length - 1];
+
+            // CRITICAL FIX: Only save the point if the finger moved at least 3 pixels.
+            // This stops the array from filling up with hundreds of duplicate points when drawing slowly.
+            if (Math.abs(x - lastX) > 3 || Math.abs(y - lastY) > 3) {
+                currentStrokeX.push(x);
+                currentStrokeY.push(y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
             e.preventDefault();
         }
 
