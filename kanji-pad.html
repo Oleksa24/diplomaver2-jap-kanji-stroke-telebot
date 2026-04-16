@@ -27,9 +27,9 @@
         ctx.strokeStyle = '#000';
 
         let isDrawing = false;
-        let strokes = []; // Holds all strokes
-        let currentStrokeX = []; // X coordinates for the current stroke
-        let currentStrokeY = []; // Y coordinates for the current stroke
+        let strokes = []; 
+        let currentStrokeX = []; /
+        let currentStrokeY = []; 
 
         function getCoordinates(e) {
             let curX, curY;
@@ -41,7 +41,6 @@
                 curX = e.offsetX;
                 curY = e.offsetY;
             }
-            // CRITICAL FIX: Round to integers to drastically reduce JSON string size
             return { x: Math.round(curX), y: Math.round(curY) };
         }
 
@@ -58,13 +57,10 @@
         function draw(e) {
             if (!isDrawing) return;
             const { x, y } = getCoordinates(e);
-            
-            // Get the last recorded point
+
             const lastX = currentStrokeX[currentStrokeX.length - 1];
             const lastY = currentStrokeY[currentStrokeY.length - 1];
 
-            // CRITICAL FIX: Only save the point if the finger moved at least 3 pixels.
-            // This stops the array from filling up with hundreds of duplicate points when drawing slowly.
             if (Math.abs(x - lastX) > 3 || Math.abs(y - lastY) > 3) {
                 currentStrokeX.push(x);
                 currentStrokeY.push(y);
@@ -76,7 +72,6 @@
 
         function stopDrawing() { 
             if (isDrawing) {
-                // Google expects an array of time points as the 3rd element, we can leave it empty
                 strokes.push([currentStrokeX, currentStrokeY, []]);
                 isDrawing = false; 
             }
@@ -91,20 +86,18 @@
 
         document.getElementById('clearBtn').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            strokes = []; // Reset strokes!
+            strokes = []; 
         });
 
         document.getElementById('recognizeBtn').addEventListener('click', () => {
             if (strokes.length === 0) return;
             
-            // Package the stroke data and canvas size into a JSON string
             const requestData = {
                 width: canvas.width,
                 height: canvas.height,
                 strokes: strokes
             };
             
-            // Send to the Telegram Python Bot
             tg.sendData(JSON.stringify(requestData)); 
         });
     </script>
