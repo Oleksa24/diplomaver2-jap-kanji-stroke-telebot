@@ -41,16 +41,16 @@ async def kanji_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
             excerpt = f"<b>{kanji_char}</b>\n\n"
             excerpt += f"<b>Meaning:</b> {meanings}\n"
-            if kun: excerpt += f"<b>Kun (Japanese):</b> {kun}\n"
-            if on: excerpt += f"<b>On (Chinese):</b> {on}\n"
+            if kun: excerpt += f"<b>Kun:</b> {kun}\n"
+            if on: excerpt += f"<b>On:</b> {on}\n"
         else:
-            excerpt = f"🈯️ <b>{kanji_char}</b>\n\nNo standard dictionary entry found for this character."
+            excerpt = f"<b>{kanji_char}</b>\n\nNo standard dictionary entry found for this character."
 
     except Exception as e:
         excerpt = "Sorry, couldn't reach the dictionary right now."
 
     jisho_url = f"https://jisho.org/search/{kanji_char}%20%23kanji"
-    dict_keyboard = [[InlineKeyboardButton("📖 View full page on Jisho.org", url=jisho_url)]]
+    dict_keyboard = [[InlineKeyboardButton("View full page on Jisho.org", url=jisho_url)]]
     reply_markup = InlineKeyboardMarkup(dict_keyboard)
 
     await query.message.reply_text(excerpt, parse_mode='HTML', reply_markup=reply_markup)
