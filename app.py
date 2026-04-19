@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-WEB_APP_URL = f"{RENDER_URL}/pad?v=2"
+WEB_APP_URL = f"{RENDER_URL}/pad?v=3"
 
 app = Quart(__name__)
 tg_app = Application.builder().token(BOT_TOKEN).build()

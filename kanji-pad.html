@@ -90,14 +90,21 @@
         });
 
         document.getElementById('recognizeBtn').addEventListener('click', () => {
-            if (strokes.length === 0) return;
+            if (strokes.length === 0) {
+                alert("Please draw something first!");
+                return;
+            }
             
             const btn = document.getElementById('recognizeBtn');
             btn.innerText = "Recognizing...";
             btn.disabled = true;
+            let userId = null;
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                userId = tg.initDataUnsafe.user.id;
+            }
 
             const requestData = {
-                user_id: tg.initDataUnsafe?.user?.id, 
+                user_id: userId, 
                 width: canvas.width,
                 height: canvas.height,
                 strokes: strokes
@@ -108,11 +115,18 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestData)
             })
-            .then(response => {
-                tg.close(); // Close the app when done
+            .then(async (response) => {
+                if (!response.ok) {
+                    const errText = await response.text();
+                    alert("Server Error: " + response.status + " - " + errText);
+                    btn.innerText = "Recognize";
+                    btn.disabled = false;
+                } else {
+                    tg.close(); 
+                }
             })
             .catch(error => {
-                alert("Error sending drawing. Try again!");
+                alert("Network error: Could not reach the server.");
                 btn.innerText = "Recognize";
                 btn.disabled = false;
             });
