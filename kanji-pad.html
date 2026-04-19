@@ -98,9 +98,14 @@
             const btn = document.getElementById('recognizeBtn');
             btn.innerText = "Recognizing...";
             btn.disabled = true;
-            let userId = null;
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                userId = tg.initDataUnsafe.user.id;
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('user_id');
+
+            if (!userId) {
+                alert("Error: Could not securely identify you. Please type /start in the bot again.");
+                btn.innerText = "Recognize";
+                btn.disabled = false;
+                return;
             }
 
             const requestData = {

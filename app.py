@@ -7,14 +7,19 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-WEB_APP_URL = f"{RENDER_URL}/pad?v=3"
+WEB_APP_URL = f"{RENDER_URL}/pad"
 
 app = Quart(__name__)
 tg_app = Application.builder().token(BOT_TOKEN).build()
 
 async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [[KeyboardButton("Draw Kanji", web_app=WebAppInfo(url=WEB_APP_URL))]]
+    user_id = update.effective_user.id
+
+    dynamic_url = f"{WEB_APP_URL}?user_id={user_id}&v=4"
+    
+    keyboard = [[KeyboardButton("Draw Kanji", web_app=WebAppInfo(url=dynamic_url))]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    
     await update.message.reply_text("Click the 'Draw Kanji' button on your keyboard below to open the pad:", reply_markup=reply_markup)
 
 
