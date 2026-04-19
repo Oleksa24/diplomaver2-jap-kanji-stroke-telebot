@@ -2,8 +2,8 @@ import os
 import json
 import requests
 from quart import Quart, request, send_file
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -23,9 +23,40 @@ async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Click the 'Draw Kanji' button on your keyboard below to open the pad:", reply_markup=reply_markup)
 
 
+async def kanji_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    kanji_char = query.data.split('_')[1]
+
+    try:
+        api_url = f"https://kanjiapi.dev/v1/kanji/{kanji_char}"
+        resp = requests.get(api_url)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            meanings = ", ".join(data.get("meanings", []))
+            kun = ", ".join(data.get("kun_readings", []))
+            on = ", ".join(data.get("on_readings", []))
+
+            excerpt = f"<b>{kanji_char}</b>\n\n"
+            excerpt += f"<b>Meaning:</b> {meanings}\n"
+            if kun: excerpt += f"<b>Kun (Japanese):</b> {kun}\n"
+            if on: excerpt += f"<b>On (Chinese):</b> {on}\n"
+        else:
+            excerpt = f"🈯️ <b>{kanji_char}</b>\n\nNo standard dictionary entry found for this character."
+
+    except Exception as e:
+        excerpt = "Sorry, couldn't reach the dictionary right now."
+
+    jisho_url = f"https://jisho.org/search/{kanji_char}%20%23kanji"
+    dict_keyboard = [[InlineKeyboardButton("📖 View full page on Jisho.org", url=jisho_url)]]
+    reply_markup = InlineKeyboardMarkup(dict_keyboard)
+
+    await query.message.reply_text(excerpt, parse_mode='HTML', reply_markup=reply_markup)
 
 tg_app.add_handler(CommandHandler("draw", draw))
-
+tg_app.add_handler(CallbackQueryHandler(kanji_button_click, pattern="^k_"))
 
 @app.before_serving
 async def init_bot():
@@ -83,16 +114,30 @@ async def recognize_api():
         res_data = response.json()
 
         if res_data[0] == "SUCCESS":
-            candidates = res_data[1][0][1]
-            top_match = candidates[0]
-            others = ", ".join(candidates[1:6])
-            reply_text = f"<b>Top Match:</b> {top_match}\n\n <i>Other possibilities:</i> {others}"
+            candidates = res_data[1][0][1][:6]
+            
+            buttons = []
+            for kanji in candidates:
+                buttons.append(InlineKeyboardButton(kanji, callback_data=f"k_{kanji}"))
+            
+            keyboard = [buttons[i:i+3] for i in range(0, len(buttons), 3)]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            reply_text = "<b>Drawing Recognized!</b>\nSelect a Kanji below to see its definition:"
+            
+            await tg_app.bot.send_message(
+                chat_id=user_id, 
+                text=reply_text, 
+                parse_mode='HTML', 
+                reply_markup=reply_markup
+            )
+            return "OK", 200
+
         else:
-            reply_text = "Sorry, couldn't recognize that drawing."
+            await tg_app.bot.send_message(chat_id=user_id, text="Sorry, couldn't recognize that drawing.")
+            return "OK", 200
             
     except Exception as e:
         reply_text = f"An error occurred: {e}"
-
-    await tg_app.bot.send_message(chat_id=user_id, text=reply_text, parse_mode='HTML')
 
     return "OK", 200
